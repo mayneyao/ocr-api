@@ -1,5 +1,4 @@
 import configparser
-from io import BytesIO
 
 import pytesseract
 import requests
@@ -18,6 +17,25 @@ LANG_DICT = {}
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 
 
+def depoint(img):  # input: gray image
+    pixdata = img.load()
+    w, h = img.size
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            count = 0
+            if pixdata[x, y - 1] > 245:
+                count = count + 1
+            if pixdata[x, y + 1] > 245:
+                count = count + 1
+            if pixdata[x - 1, y] > 245:
+                count = count + 1
+            if pixdata[x + 1, y] > 245:
+                count = count + 1
+            if count > 2:
+                pixdata[x, y] = 255
+    return img
+
+
 def binarizing(img, threshold):  # input: gray image
     pixdata = img.load()
     w, h = img.size
@@ -33,15 +51,17 @@ def binarizing(img, threshold):  # input: gray image
 def handle_img(img):
     # todo 图片处理 提高识别率
     # 灰度处理
-    # img = img.convert('L')
+    img = img.convert('L')
+    img = depoint(img)
     # 二值处理
-    # img = binarizing(img, 127)
+    img = binarizing(img, 203)
+    # img.show()
     # todo
     return img
 
 
 def get_img(url):
-    res = requests.get(url,stream=True)
+    res = requests.get(url, stream=True)
     return Image.open(res.raw)
 
 
